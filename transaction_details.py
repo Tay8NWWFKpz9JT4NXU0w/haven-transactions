@@ -131,7 +131,8 @@ end_out=find_first_output_for_block(current_height-1)-1
 
 ####################
 #Get all combinations of (output_id, block,transaction) for the range 
-####################out_range=range(start_out, end_out)
+####################
+out_range=range(start_out, end_out)
 all_outputs=[]
 outs_chunks=[out_range[i:i+1000] for i in range(0, len(out_range), 1000)]
 for outs_chunk in outs_chunks:
