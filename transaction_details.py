@@ -1,12 +1,16 @@
+####################
+####################
+#     PARAMS
+####################
+####################
 
 daemon_rpc_port='17750' # Online daemon
-start_block=1620000
+start_block=1440000
+
 
 ####################
 ####################
-####################
-#     START
-####################
+#   HELPER FUNCTIONS
 ####################
 ####################
 
@@ -89,20 +93,24 @@ def as_decimal(amount): #Converts Haven amounts to decimal amounts
 	else:
 		return decimal.Decimal(amount)/1000000000000 
 
+####################
+####################
+#   MAIN PART
+####################
+####################
+
 
 ####################
-#Get current block height from offline and online daemon
-##################### 
-
-
 #Get current blockchain height
+####################
 data = '{"jsonrpc":"2.0","id":"0","method":"get_block_count"}'
 response = requests.post('http://127.0.0.1:'+daemon_rpc_port+'/json_rpc', headers=headers, data=data)
 json_obj = json.loads(response.content.decode())
 current_height=json_obj['result']['count']
 
-
-#Read blocks related data. Currently not used.
+####################
+#Read blocks related data. Currently this data is not used.
+####################
 blocks_data=[]
 blocks=range(start_block,current_height-1)
 blocks_chunks=[blocks[i:i+1000] for i in range(0, len(blocks), 1000)]
@@ -113,15 +121,17 @@ for block_chunk in blocks_chunks:
 	for res in zip(json_obj['result']['headers'], block_chunk):
 		blocks_data.append([res[1], res[0]['reward']])
 
-
+####################
 #In order to analyze transactions, we need a way to obtain their transaction hashes
 #The fasted way to do that in bulk appears to be to use the get_outs RPC method, as get_block only returns the transaction hashes for one block
 #So first we find the first and last out of our block range, which is defined as (start_block,current blockchain height-2)
+####################
 start_out=find_first_output_for_block(start_block)
 end_out=find_first_output_for_block(current_height-1)-1
 
+####################
 #Get all combinations of (output_id, block,transaction) for the range 
-out_range=range(start_out, end_out)
+####################out_range=range(start_out, end_out)
 all_outputs=[]
 outs_chunks=[out_range[i:i+1000] for i in range(0, len(out_range), 1000)]
 for outs_chunk in outs_chunks:
@@ -134,8 +144,9 @@ for outs_chunk in outs_chunks:
 		quit()
 	for out_rec in zip(json_obj['outs'],outs_chunk):
 		all_outputs.append([out_rec[1], out_rec[0]['height'], out_rec[0]['txid']])
-
-#Get all combinations of (block,transaction) for the range 
+####################
+#Get all combinations of (block,transaction) for the range
+####################
 all_txns=[]
 for output in all_outputs:	
 	if len(all_txns)==0:
@@ -144,9 +155,10 @@ for output in all_outputs:
 		if output[2]!=all_txns[-1][1]:
 			all_txns.append([output[1], output[2]])
 
-
+####################
 #Now get transaction data using the get_transactions method, 1000 transactions at a time
 #Parse the json and print some useful output
+####################
 all_txns_chunks=[all_txns[i:i+1000] for i in range(0, len(all_txns), 1000)]
 for txns_chunks in all_txns_chunks:
 	tx_hashes_rpc=','.join('"'+k[1]+'"' for k in txns_chunks)
@@ -195,5 +207,3 @@ for txns_chunks in all_txns_chunks:
 		
 		result_row_str=';'.join(str(k) for k in result_row)
 		print(result_row_str)
-
-
